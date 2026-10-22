@@ -1,10 +1,12 @@
 pipeline {
     agent any
     environment {
-        DOCKER_HUB_ID = 'asihfibrahim600@gmail.com' // Changed from placeholder to your real Docker username
+        // Change from your email address to your exact Docker Hub username handle
+        DOCKER_HUB_ID = 'asihf24mis0005' 
         APP_NAME      = 'water-system'
         VERSION_TAG   = "${BUILD_NUMBER}"
     }
+
 
     parameters {
         choice(name: 'DEPLOY_ENV', choices: ['Production', 'Staging'], description: 'Target Execution Space')
