@@ -37,10 +37,7 @@ pipeline {
                 expression { params.DEPLOY_ENV == 'Production' }
             }
             steps {
-                // Connected securely to your fresh dockerhub-creds-v2 credential slot
-                             // Changed from -v2 to -v3 to match your new credential slot
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds-v3', usernameVariable: 'DB_USER', passwordVariable: 'DB_PASS')]) {
- {
                     bat "docker build -t %DOCKER_HUB_ID%/%APP_NAME%:%VERSION_TAG% ."
                     bat "docker build -t %DOCKER_HUB_ID%/%APP_NAME%:latest ."
                     bat "echo %DB_PASS% | docker login -u %DB_USER% --password-stdin"
