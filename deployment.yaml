@@ -21,7 +21,7 @@ spec:
         spec:
       containers:
       - name: web-dashboard
-        image: asihf/water-system:latest # Changed from placeholder to your real Docker username
+        image: asihfibrahim600@gmail.com/water-system:latest # Changed from placeholder to your real Docker username
         imagePullPolicy: Always
         ports:
         - containerPort: 80
