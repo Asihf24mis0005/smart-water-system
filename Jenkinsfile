@@ -37,14 +37,13 @@ pipeline {
                 expression { params.DEPLOY_ENV == 'Production' }
             }
             steps {
-                // Pointing to your credential variable securely without any hardcoded text
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds-v3', usernameVariable: 'DB_USER', passwordVariable: 'DB_PASS')]) {
                     script {
                         bat "docker build -t %DOCKER_HUB_ID%/%APP_NAME%:%VERSION_TAG% ."
                         bat "docker build -t %DOCKER_HUB_ID%/%APP_NAME%:latest ."
                         
-                        // Clean Windows syntax: passing credentials safely to bypass stdin pipe failure
-                        bat "docker login -u %DB_USER% -p %DB_PASS%"
+                        // Using pipe standard input injection format to pass special characters cleanly on Windows hosts
+                        bat "echo %DB_PASS%| docker login -u %DB_USER% --password-stdin"
                         
                         bat "docker push %DOCKER_HUB_ID%/%APP_NAME%:%VERSION_TAG%"
                         bat "docker push %DOCKER_HUB_ID%/%APP_NAME%:latest"
@@ -86,4 +85,5 @@ pipeline {
         }
     }
 }
+
 
