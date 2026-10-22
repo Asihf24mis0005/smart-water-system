@@ -1,13 +1,10 @@
 pipeline {
     agent any
     environment {
-        // Change from your email address to your exact Docker Hub username handle
         DOCKER_HUB_ID = 'asihf' 
         APP_NAME      = 'water-system'
         VERSION_TAG   = "${BUILD_NUMBER}"
     }
-
-
     parameters {
         choice(name: 'DEPLOY_ENV', choices: ['Production', 'Staging'], description: 'Target Execution Space')
     }
@@ -40,7 +37,8 @@ pipeline {
                 expression { params.DEPLOY_ENV == 'Production' }
             }
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DB_USER', passwordVariable: 'DB_PASS')]) {
+                // Connected securely to your fresh dockerhub-creds-v2 credential slot
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds-v2', usernameVariable: 'DB_USER', passwordVariable: 'DB_PASS')]) {
                     bat "docker build -t %DOCKER_HUB_ID%/%APP_NAME%:%VERSION_TAG% ."
                     bat "docker build -t %DOCKER_HUB_ID%/%APP_NAME%:latest ."
                     bat "echo %DB_PASS% | docker login -u %DB_USER% --password-stdin"
@@ -78,7 +76,6 @@ pipeline {
     }
     post {
         always {
-            // Typo removed completely here
             archiveArtifacts artifacts: 'deployment.yaml', onlyIfSuccessful: false
             cleanWs()
         }
