@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        DOCKER_HUB_ID = 'yourdockerhubusername' // Change to your real lower-case Docker Hub ID
+        DOCKER_HUB_ID = 'yourdockerhubusername' // Ensure this matches your exact lower-case Docker Hub ID
         APP_NAME      = 'water-system'
         VERSION_TAG   = "${BUILD_NUMBER}"
     }
@@ -20,14 +20,12 @@ pipeline {
                 stage('HTML Syntax Integrity') {
                     steps {
                         echo "Validating syntax markup tags..."
-                        // Using Windows findstr instead of Linux grep
                         bat "findstr /C:\"</html>\" index.html"
                     }
                 }
                 stage('Dockerfile Build Assessment') {
                     steps {
                         echo "Verifying structural parameters..."
-                        // Using Windows findstr instead of Linux grep
                         bat "findstr /C:\"FROM nginx\" Dockerfile"
                     }
                 }
@@ -40,7 +38,6 @@ pipeline {
             }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DB_USER', passwordVariable: 'DB_PASS')]) {
-                    // Executing via bat for Windows host runners
                     bat "docker build -t %DOCKER_HUB_ID%/%APP_NAME%:%VERSION_TAG% ."
                     bat "docker build -t %DOCKER_HUB_ID%/%APP_NAME%:latest ."
                     bat "echo %DB_PASS% | docker login -u %DB_USER% --password-stdin"
@@ -53,7 +50,6 @@ pipeline {
         stage('Deploy Cluster Manifests') {
             steps {
                 script {
-                    // Using powershell string-replacement instead of sed (sed doesn't exist natively on Windows)
                     powershell "(Get-Content deployment.yaml) -replace '${DOCKER_HUB_ID}/${APP_NAME}:latest', '${DOCKER_HUB_ID}/${APP_NAME}:${VERSION_TAG}' | Set-Content deployment.yaml"
                     bat "kubectl apply -f deployment.yaml"
                 }
@@ -79,9 +75,9 @@ pipeline {
     }
     post {
         always {
-            archiveArtifacts artifacts: 'deployment.yaml', honesty: false, onlyIfSuccessful: false
+            // Typo removed completely here
+            archiveArtifacts artifacts: 'deployment.yaml', onlyIfSuccessful: false
             cleanWs()
         }
     }
 }
-
