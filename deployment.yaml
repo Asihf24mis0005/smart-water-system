@@ -18,13 +18,14 @@ spec:
     metadata:
       labels:
         app: water-monitor
-    spec:
+        spec:
       containers:
       - name: web-dashboard
-        image: asihf/water-system:latest
+        image: asihf24mis0005/water-system:latest # Changed from placeholder to your real Docker username
         imagePullPolicy: Always
         ports:
         - containerPort: 80
+
 ---
 apiVersion: v1
 kind: Service
