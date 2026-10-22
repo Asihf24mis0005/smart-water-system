@@ -23,7 +23,7 @@ spec:
       containers:
       - name: web-dashboard
         // Ensure no email address layout exists here
-        image: asihf24mis0005/water-system:latest 
+        image: asihf/water-system:latest 
         imagePullPolicy: Always
         ports:
         - containerPort: 80
