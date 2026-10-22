@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        DOCKER_HUB_ID = 'asihf' 
+        DOCKER_HUB_ID = 'yourdockerhubusername' // Change to your real lower-case Docker Hub ID
         APP_NAME      = 'water-system'
         VERSION_TAG   = "${BUILD_NUMBER}"
     }
@@ -20,13 +20,15 @@ pipeline {
                 stage('HTML Syntax Integrity') {
                     steps {
                         echo "Validating syntax markup tags..."
-                        sh "grep -q '</html>' index.html"
+                        // Using Windows findstr instead of Linux grep
+                        bat "findstr /C:\"</html>\" index.html"
                     }
                 }
                 stage('Dockerfile Build Assessment') {
                     steps {
                         echo "Verifying structural parameters..."
-                        sh "grep -q 'FROM nginx' Dockerfile"
+                        // Using Windows findstr instead of Linux grep
+                        bat "findstr /C:\"FROM nginx\" Dockerfile"
                     }
                 }
             }
@@ -38,11 +40,12 @@ pipeline {
             }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DB_USER', passwordVariable: 'DB_PASS')]) {
-                    sh "docker build -t ${DOCKER_HUB_ID}/${APP_NAME}:${VERSION_TAG} ."
-                    sh "docker build -t ${DOCKER_HUB_ID}/${APP_NAME}:latest ."
-                    sh "echo \$DB_PASS | docker login -u \$DB_USER --password-stdin"
-                    sh "docker push ${DOCKER_HUB_ID}/${APP_NAME}:${VERSION_TAG}"
-                    sh "docker push ${DOCKER_HUB_ID}/${APP_NAME}:latest"
+                    // Executing via bat for Windows host runners
+                    bat "docker build -t %DOCKER_HUB_ID%/%APP_NAME%:%VERSION_TAG% ."
+                    bat "docker build -t %DOCKER_HUB_ID%/%APP_NAME%:latest ."
+                    bat "echo %DB_PASS% | docker login -u %DB_USER% --password-stdin"
+                    bat "docker push %DOCKER_HUB_ID%/%APP_NAME%:%VERSION_TAG%"
+                    bat "docker push %DOCKER_HUB_ID%/%APP_NAME%:latest"
                 }
             }
         }
@@ -50,9 +53,9 @@ pipeline {
         stage('Deploy Cluster Manifests') {
             steps {
                 script {
-                    // Update deployment manifest dynamically with the built image version tag
-                    sh "sed -i 's|${DOCKER_HUB_ID}/${APP_NAME}:latest|${DOCKER_HUB_ID}/${APP_NAME}:${VERSION_TAG}|g' deployment.yaml"
-                    sh "kubectl apply -f deployment.yaml"
+                    // Using powershell string-replacement instead of sed (sed doesn't exist natively on Windows)
+                    powershell "(Get-Content deployment.yaml) -replace '${DOCKER_HUB_ID}/${APP_NAME}:latest', '${DOCKER_HUB_ID}/${APP_NAME}:${VERSION_TAG}' | Set-Content deployment.yaml"
+                    bat "kubectl apply -f deployment.yaml"
                 }
             }
         }
@@ -61,14 +64,13 @@ pipeline {
             steps {
                 script {
                     try {
-                        // Monitor the pod deployment loop. Timeout catches errors early.
-                        sh "kubectl rollout status deployment/water-app-deployment --timeout=45s"
+                        bat "kubectl rollout status deployment/water-app-deployment --timeout=45s"
                         echo "Deployment stabilized successfully!"
                     } catch (Exception err) {
                         echo "🚨 CRITICAL FAULT DETECTED: Rollout failed to clear stability check!"
                         echo "Executing automated rollback sequence..."
-                        sh "kubectl rollout undo deployment/water-app-deployment"
-                        sh "kubectl rollout status deployment/water-app-deployment"
+                        bat "kubectl rollout undo deployment/water-app-deployment"
+                        bat "kubectl rollout status deployment/water-app-deployment"
                         error("Deployment halted. Automatically rolled back to the last stable release.")
                     }
                 }
@@ -77,8 +79,9 @@ pipeline {
     }
     post {
         always {
-            archiveArtifacts artifacts: 'deployment.yaml', onlyIfSuccessful: false
+            archiveArtifacts artifacts: 'deployment.yaml', honesty: false, onlyIfSuccessful: false
             cleanWs()
         }
     }
 }
+
